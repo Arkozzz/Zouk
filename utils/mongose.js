@@ -12,7 +12,7 @@ module.exports = {
             family: 4
         };
 
-        mongoose.connect(`mongodb+srv://PhantHive:${process.env.DB}@iris.txxhe.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`, dbOptions);
+        mongoose.connect(`mongodb+srv://PhantHive:${process.env.DB}@a-world.vri1c.mongodb.net/zouk`, dbOptions);
         mongoose.Promise = global.Promise;
 
         mongoose.connection.on('connected', () => {

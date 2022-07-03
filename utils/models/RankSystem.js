@@ -11,5 +11,5 @@ const guildSchema = mongoose.Schema({
 
 });
 
-const myDB = mongoose.connection.useDb('ipsa_students');
-module.exports = myDB.model('RankSystem', guildSchema);
+const myDB = mongoose.connection.useDb('zouk');
+module.exports = myDB.model('rank_systems', guildSchema);
