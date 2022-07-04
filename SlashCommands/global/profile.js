@@ -120,30 +120,58 @@ const applyText = (canvas, text, size) => {
     return ctx.font;
 };
 
-const getLevel = async (interaction, context) => {
-    let a;
-    rankSystem.findOne({
+const getLevel = async (interaction) => {
+    return new Promise((resolve, reject) => {
+        rankSystem.findOne({
 
-            ID: interaction.user.id + "-" + interaction.guild.id
+                ID: interaction.user.id + "-" + interaction.guild.id
 
-        },
-        async (err, data) => {
-            if (err) console.log('error err', err);
-            if (!data) {
-                console.log(interaction.user.id + "-" + interaction.guild.id)
-                interaction.reply("pas de rang!")
-                const newD = new rankSystem({
-                    ID: interaction.user.id + "-" + interaction.guild.id,
-                    serverID: interaction.guild.id,
-                    XP: 0,
-                    LEVEL: 1,
-                    RANK: 0
-                });
-                newD.save();
-            }
-            a = data.LEVEL
-        })
-    return a
+            },
+            async (err, data) => {
+                if (err) reject("Error occured with the DB");
+                if (!data) {
+                    console.log(interaction.user.id + "-" + interaction.guild.id)
+                    interaction.reply("pas de rang!")
+                    const newD = new rankSystem({
+                        ID: interaction.user.id + "-" + interaction.guild.id,
+                        serverID: interaction.guild.id,
+                        XP: 0,
+                        LEVEL: 1,
+                        RANK: 0
+                    });
+                    newD.save();
+                }
+                resolve(data.LEVEL)
+            })
+    })
+
+};
+
+const getRank = async (interaction) => {
+    return new Promise((resolve, reject) => {
+        rankSystem.findOne({
+
+                ID: interaction.user.id + "-" + interaction.guild.id
+
+            },
+            async (err, data) => {
+                if (err) reject("Error occured with the DB");
+                if (!data) {
+                    console.log(interaction.user.id + "-" + interaction.guild.id)
+                    interaction.reply("pas de rang!")
+                    const newD = new rankSystem({
+                        ID: interaction.user.id + "-" + interaction.guild.id,
+                        serverID: interaction.guild.id,
+                        XP: 0,
+                        LEVEL: 1,
+                        RANK: 0
+                    });
+                    newD.save();
+                }
+                resolve(data.RANK)
+            })
+    })
+
 };
 
 module.exports = {
@@ -202,8 +230,13 @@ module.exports = {
         context.restore();
         context.font = '35px Bahnschrift SemiBold';
         context.textAlign = 'left'; //a partir du moment ou j'ai commence à utiliser align alors tout align
-        const level = await getLevel(interaction, context)
-        context.fillText(`Level : ${level}         Rank : #1/100`, 47, 410);
+        const level = await getLevel(interaction)
+            .catch((err) => console.log(err));
+
+        const rank = await getRank(interaction)
+            .catch((err) => console.log(err));
+
+        context.fillText(`Level : ${level}         Rank : #${rank}/100`, 47, 410);
         //white line
         context.beginPath();
         context.fillStyle = '#FFFFFF';
