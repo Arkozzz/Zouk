@@ -214,7 +214,7 @@ module.exports = {
         // black transparent rect
         await coloredFillFrame(25, 350, 769, 442, 40, "#252525", 0.5, context);
         context.restore();
-        //xp bar design
+        //xp bar design 
         context.save();
         await coloredFillFrame(50, 450, 450, 25, 12.5, "#30a419", 1,  context);
         context.restore();
