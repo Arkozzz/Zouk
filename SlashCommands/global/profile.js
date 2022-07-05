@@ -83,25 +83,48 @@ const pictureFillFrame = async (x, y, w, h, radius, path, context, canvas) =>
     context.closePath();
 };
 
-const coloredFillFrame = async (x, y, w, h, radius, color, opacity, context) =>
+const coloredFillFrame = async (x, y, w, h, radius, color, opacity, context, i=0) =>
 {
     let r = x + w;
     let b = y + h;
     context.fillStyle = color
     context.globalAlpha = opacity
-    context.beginPath();
-    context.moveTo(x+radius, y);
-    context.lineTo(r-radius, y);
-    context.quadraticCurveTo(r, y, r, y+radius);
-    context.lineTo(r, y+h-radius);
-    context.quadraticCurveTo(r, b, r-radius, b);
-    context.lineTo(x+radius, b);
-    context.quadraticCurveTo(x, b, x, b-radius);
-    context.lineTo(x, y+radius);
-    context.quadraticCurveTo(x, y, x+radius, y);
-    context.closePath();
-    context.clip();
+
+    // we only draw the right part if the xp is above 220 to avoid stylish problem :)
+    if (w < 20) {
+        // we wanna draw only the left arc and the right part need to be a vertical line
+        // for stylish purpose :)
+        context.beginPath();
+        context.moveTo(x + radius + w, y);
+        context.lineTo(x + radius, y);
+        context.quadraticCurveTo(x, y, x, y + radius);
+        context.lineTo(x, b - radius);
+        context.quadraticCurveTo(x, b, x + radius, b);
+        context.lineTo(x + radius + w, b);
+        context.lineTo(x + radius + w, y);
+    }
+    else {
+        // we wanna draw 2 arcs one at the right and one at the left
+        context.beginPath();
+        context.moveTo(x + radius, y);
+        context.lineTo(r - radius ,y);
+        context.quadraticCurveTo(r, y, r, y + radius);
+        context.lineTo(r, b - radius);
+        context.quadraticCurveTo(r, b, r - radius, b);
+
+        context.lineTo(x + radius, b);
+        context.quadraticCurveTo(x, b, x, b - radius);
+        context.lineTo(x, y + radius);
+        context.quadraticCurveTo(x, y, x + radius, y);
+
+    }
+
     context.fill();
+
+    context.closePath();
+
+    context.clip();
+
 };
 
 const applyText = (canvas, text, size) => {
@@ -131,7 +154,7 @@ const getLevel = async (interaction) => {
                 if (err) reject("Error occured with the DB");
                 if (!data) {
                     console.log(interaction.user.id + "-" + interaction.guild.id)
-                    interaction.reply("pas de rang!")
+                    interaction.reply("pas de level!")
                     const newD = new rankSystem({
                         ID: interaction.user.id + "-" + interaction.guild.id,
                         serverID: interaction.guild.id,
@@ -171,7 +194,31 @@ const getRank = async (interaction) => {
                 resolve(data.RANK)
             })
     })
+};
+const getCurrentXP = async (interaction) => {
+    return new Promise((resolve, reject) => {
+        rankSystem.findOne({
 
+                ID: interaction.user.id + "-" + interaction.guild.id
+
+            },
+            async (err, data) => {
+                if (err) reject("Error occured with the DB");
+                if (!data) {
+                    console.log(interaction.user.id + "-" + interaction.guild.id)
+                    interaction.reply("pas d'xp!")
+                    const newD = new rankSystem({
+                        ID: interaction.user.id + "-" + interaction.guild.id,
+                        serverID: interaction.guild.id,
+                        XP: 0,
+                        LEVEL: 1,
+                        RANK: 0
+                    });
+                    newD.save();
+                }
+                resolve(data.XP)
+            })
+    })
 };
 
 module.exports = {
@@ -180,7 +227,14 @@ module.exports = {
 
         const canvas = createCanvas(825, 825);
         const context = canvas.getContext('2d');
-
+        const level = await getLevel(interaction)
+            .catch((err) => console.log(err));
+        const rank = await getRank(interaction)
+            .catch((err) => console.log(err));
+        let maxXp = 25 * (level ** 2) + 169 * level + 845;
+        const curXp = await getCurrentXP(interaction)
+        let pixelLevel = (curXp/maxXp) * 450;
+        console.log(pixelLevel);
         // general forms
         context.save() // to reset when restored
         await frame(10, 10, 800, 800, 50, '#124fd4', 1, context);
@@ -214,9 +268,9 @@ module.exports = {
         // black transparent rect
         await coloredFillFrame(25, 350, 769, 442, 40, "#252525", 0.5, context);
         context.restore();
-        //xp bar design 
+        //xp bar design
         context.save();
-        await coloredFillFrame(50, 450, 450, 25, 12.5, "#30a419", 1,  context);
+        await coloredFillFrame(50, 450, pixelLevel, 25, 12.5, "#30a419", 1,  context);
         context.restore();
         await frame(47, 446.7, 456, 32, 14.5, "#FFFFFF",0.7, context);
         context.globalAlpha = 1;
@@ -226,16 +280,10 @@ module.exports = {
         context.fillText('xp', 65, 469);
         context.font = '19px Bahnschrift SemiBold'
         context.textAlign = "center";
-        context.fillText('1000/1000', 280, 469); // limit to 14 characters
+        context.fillText(`${curXp}/${maxXp}`, 280, 469); // limit to 14 characters
         context.restore();
         context.font = '35px Bahnschrift SemiBold';
         context.textAlign = 'left'; //a partir du moment ou j'ai commence à utiliser align alors tout align
-        const level = await getLevel(interaction)
-            .catch((err) => console.log(err));
-
-        const rank = await getRank(interaction)
-            .catch((err) => console.log(err));
-
         context.fillText(`Level : ${level}         Rank : #${rank}/100`, 47, 410);
         //white line
         context.beginPath();
